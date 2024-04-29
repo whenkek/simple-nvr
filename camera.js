@@ -11,6 +11,7 @@ const videoConcatinator = require('./video-concat.js');
 const videoLengthSeconds = 300; // 5 mins
 const timeoutRecordingWatcher = 1000 * 310; // 5 minutes 10 seconds - increased due to mkv files not triggering changes as frequently
 const cameras = [];
+const tzOffset = (new Date()).getTimezoneOffset() * 60000;
 
 module.exports.initCameras = () => {
     for (let i = 0; i < cameraConfigs.length; i++) {
@@ -188,15 +189,16 @@ class CameraStream {
         }
         const newDirectory = dayDirectory(this.storagePath, date);
         await fsAsync.mkdir(newDirectory, { recursive: true });
-        const newFilename = `${date.toISOString().split(':').join(' ').split('.')[0]}.mkv`;
+	const dateWithOffset = new Date(date - tzOffset);
+        const newFilename = `${dateWithOffset.toISOString().split(':').join(' ').split('.')[0]}.mkv`;
         const newFilepath = path.join(newDirectory, newFilename);
         await fsAsync.rename(filepath, newFilepath);
-        this.log(`Moved ${date.toISOString()}`);
+        this.log(`Moved ${dateWithOffset.toISOString()}`);
     }
 }
 
 
-function dayDirectory(baseDir = '/', date = new Date()) {
+function dayDirectory(baseDir = '/', date = new Date(new Date() - tzOffset)) {
     const year = add_zero(date.getUTCFullYear());
     const month = add_zero(date.getUTCMonth() + 1);
     const day = add_zero(date.getUTCDate());
